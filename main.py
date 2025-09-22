@@ -31,8 +31,8 @@ class BeautyVideoPlugin(Star):
                     else:
                         return None, f"获取视频失败，状态码：{response.status}"
         except Exception as e:
-            self.context.logger.error(f"获取美女视频失败: {str(e)}")
-            return None, "获取视频时发生错误"
+            # 移除了logger的使用，直接返回错误信息
+            return None, f"获取视频时发生错误: {str(e)}"
     
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
