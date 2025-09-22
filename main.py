@@ -26,12 +26,20 @@ class BeautyVideoPlugin(Star):
             async with aiohttp.ClientSession() as session:
                 async with session.get(BEAUTY_VIDEO_API) as response:
                     if response.status == 200:
-                        video_url = await response.text()
-                        return video_url, None
+                        # 尝试读取为文本（URL），如果失败则可能是二进制数据
+                        try:
+                            video_url = await response.text()
+                            # 简单验证是否是URL
+                            if video_url.startswith(('http://', 'https://')):
+                                return video_url, None
+                            else:
+                                return None, "API返回的数据不是有效的视频URL"
+                        except UnicodeDecodeError:
+                            # 如果是二进制数据，可能需要保存为文件
+                            return None, "API返回的是二进制数据，请检查API文档确认返回格式"
                     else:
                         return None, f"获取视频失败，状态码：{response.status}"
         except Exception as e:
-            # 移除了logger的使用，直接返回错误信息
             return None, f"获取视频时发生错误: {str(e)}"
     
     @event_message_type(EventMessageType.GROUP_MESSAGE)
