@@ -1,10 +1,7 @@
 import os
-import aiohttp
 import time
-import tempfile
 from astrbot.api.all import *
 
-PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_beautyvideo')
 BEAUTY_VIDEO_API = "http://api.ocoa.cn/api/beautyvideo.php"
 COOLDOWN_TIME = 5  # 冷却时间5秒
 
@@ -14,52 +11,31 @@ class BeautyVideoPlugin(Star):
         super().__init__(context)
         self.last_query_time = 0  # 记录上次查询时间
     
-    async def _get_beauty_video(self):
-        """获取美女视频"""
-        try:
-            current_time = time.time()
-            if current_time - self.last_query_time < COOLDOWN_TIME:
-                remaining = COOLDOWN_TIME - (current_time - self.last_query_time)
-                return None, f"请求过于频繁，请等待 {remaining:.1f} 秒后再试"
-            
-            self.last_query_time = current_time
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(BEAUTY_VIDEO_API) as response:
-                    if response.status == 200:
-                        # 创建临时文件保存视频
-                        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_file:
-                            video_data = await response.read()
-                            tmp_file.write(video_data)
-                            tmp_file_path = tmp_file.name
-                        
-                        return tmp_file_path, None
-                    else:
-                        return None, f"获取视频失败，状态码：{response.status}"
-        except Exception as e:
-            return None, f"获取视频时发生错误: {str(e)}"
+    async def _can_request(self):
+        """检查是否可以发起请求"""
+        current_time = time.time()
+        if current_time - self.last_query_time < COOLDOWN_TIME:
+            remaining = COOLDOWN_TIME - (current_time - self.last_query_time)
+            return False, f"请求过于频繁，请等待 {remaining:.1f} 秒后再试"
+        self.last_query_time = current_time
+        return True, None
     
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
         """群聊消息处理器"""
         msg = event.message_str.strip()
         
-        # 美女视频指令
         if msg == "美女视频":
-            video_path, error = await self._get_beauty_video()
-            if error:
+            # 检查冷却时间
+            can_request, error = await self._can_request()
+            if not can_request:
                 yield event.chain_result([Plain(text=error)])
-            else:
-                try:
-                    # 创建视频消息并返回
-                    video = Comp.Video.fromFileSystem(path=video_path)
-                    yield event.chain_result([video])
-                finally:
-                    # 发送后删除临时文件
-                    if os.path.exists(video_path):
-                        os.remove(video_path)
+                return
+            
+            # 直接使用API地址作为视频源
+            video = Comp.Video.fromURL(url=BEAUTY_VIDEO_API)
+            yield event.chain_result([video])
         
-        # 帮助指令
         elif msg == "视频帮助":
             help_text = """美女视频插件使用说明：
 指令：美女视频 - 获取随机美女视频
