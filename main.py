@@ -1,6 +1,7 @@
 import os
 import aiohttp
 import time
+import tempfile
 from astrbot.api.all import *
 
 PLUGIN_DIR = os.path.join('data', 'plugins', 'astrbot_plugin_beautyvideo')
@@ -26,17 +27,13 @@ class BeautyVideoPlugin(Star):
             async with aiohttp.ClientSession() as session:
                 async with session.get(BEAUTY_VIDEO_API) as response:
                     if response.status == 200:
-                        # 尝试读取为文本（URL），如果失败则可能是二进制数据
-                        try:
-                            video_url = await response.text()
-                            # 简单验证是否是URL
-                            if video_url.startswith(('http://', 'https://')):
-                                return video_url, None
-                            else:
-                                return None, "API返回的数据不是有效的视频URL"
-                        except UnicodeDecodeError:
-                            # 如果是二进制数据，可能需要保存为文件
-                            return None, "API返回的是二进制数据，请检查API文档确认返回格式"
+                        # 创建临时文件保存视频
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_file:
+                            video_data = await response.read()
+                            tmp_file.write(video_data)
+                            tmp_file_path = tmp_file.name
+                        
+                        return tmp_file_path, None
                     else:
                         return None, f"获取视频失败，状态码：{response.status}"
         except Exception as e:
@@ -49,13 +46,18 @@ class BeautyVideoPlugin(Star):
         
         # 美女视频指令
         if msg == "美女视频":
-            video_url, error = await self._get_beauty_video()
+            video_path, error = await self._get_beauty_video()
             if error:
                 yield event.chain_result([Plain(text=error)])
             else:
-                # 创建视频消息并返回
-                video = Comp.Video.fromURL(url=video_url)
-                yield event.chain_result([video])
+                try:
+                    # 创建视频消息并返回
+                    video = Comp.Video.fromFileSystem(path=video_path)
+                    yield event.chain_result([video])
+                finally:
+                    # 发送后删除临时文件
+                    if os.path.exists(video_path):
+                        os.remove(video_path)
         
         # 帮助指令
         elif msg == "视频帮助":
