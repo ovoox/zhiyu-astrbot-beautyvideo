@@ -2,45 +2,35 @@ from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Plain, Video 
 import aiohttp
-import time
+import base64
 
 @register("beauty_video", "美女视频", "获取美女视频的插件", "1.0.0")
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        self.api_url = "http://api.ocoa.cn/api/beautyvideo.php"
+        # 加密的API地址，避免直接暴露
+        self.encrypted_api = "aHR0cDovL2FwaS5vY29hLmNuL2FwaS9iZWF1dHl2aWRlby5waHA="
         self.session = aiohttp.ClientSession()
-        self.last_request_time = 0
-        self.cooldown = 5  # 5秒冷却时间
 
     async def terminate(self):
         await self.session.close()
 
+    def _decrypt_api(self):
+        """解密API接口地址"""
+        return base64.b64decode(self.encrypted_api).decode()
+
     @filter.command("美女视频", alias={"视频", "美女"})
     async def get_beauty_video(self, event: AstrMessageEvent):
-        # 检查冷却时间
-        current_time = time.time()
-        if current_time - self.last_request_time < self.cooldown:
-            remaining = self.cooldown - (current_time - self.last_request_time)
-            yield event.plain_result(f"请求过于频繁，请等待 {remaining:.1f} 秒后再试")
-            return
-        
-        self.last_request_time = current_time
-
         try:
-            async with self.session.get(self.api_url) as response:
-                if response.status != 200:
-                    yield event.plain_result(f"请求失败：状态码{response.status}")
-                    return
-                
-                # 直接使用API地址作为视频源
-                video_component = Video.fromURL(self.api_url)
-                message_chain = [video_component]
-                yield event.chain_result(message_chain)
+            # 使用解密后的真实API地址
+            real_api_url = self._decrypt_api()
+            
+            async with self.session.get(real_api_url) as response:
+                if response.status == 200:
+                    video_component = Video.fromURL(real_api_url)
+                    yield event.chain_result([video_component])
+                else:
+                    yield event.plain_result("视频获取失败，请稍后重试")
 
-        except aiohttp.ClientError as e:
-            yield event.plain_result(f"网络请求出错：{str(e)}")
-        except Exception as e:
-            yield event.plain_result(f"发生未知错误：{str(e)}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            yield event.plain_result("视频加载异常，请稍后重试")
