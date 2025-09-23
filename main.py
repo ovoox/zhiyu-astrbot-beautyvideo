@@ -8,7 +8,7 @@ import base64
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        # 加密的API地址，避免直接暴露
+        # 加密的API地址
         self.encrypted_api = "aHR0cDovL2FwaS5vY29hLmNuL2FwaS9iZWF1dHl2aWRlby5waHA="
         self.session = aiohttp.ClientSession()
 
@@ -19,10 +19,10 @@ class BeautyVideoPlugin(Star):
         """解密API接口地址"""
         return base64.b64decode(self.encrypted_api).decode()
 
-    @filter.command("美女视频", alias={"视频", "美女"})
+    # 使用正则匹配，支持加/和不加/都能触发
+    @filter.regex(r"^[/]?(美女视频|视频|美女|看视频|来点视频|看美女)$")
     async def get_beauty_video(self, event: AstrMessageEvent):
         try:
-            # 使用解密后的真实API地址
             real_api_url = self._decrypt_api()
             
             async with self.session.get(real_api_url) as response:
