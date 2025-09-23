@@ -8,19 +8,13 @@ import base64
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        # 加密的API地址
         self.encrypted_api = "aHR0cDovL2FwaS5vY29hLmNuL2FwaS9iZWF1dHl2aWRlby5waHA="
         self.session = aiohttp.ClientSession()
-
     async def terminate(self):
         await self.session.close()
-
     def _decrypt_api(self):
-        """解密API接口地址"""
         return base64.b64decode(self.encrypted_api).decode()
-
-    # 使用正则匹配，支持加/和不加/都能触发
-    @filter.regex(r"^[/]?(美女视频|视频|美女|看视频|来点视频|看美女)$")
+    @filter.regex(r"^[/]?(美女视频|看视频|看美女)$")
     async def get_beauty_video(self, event: AstrMessageEvent):
         try:
             real_api_url = self._decrypt_api()
@@ -30,7 +24,7 @@ class BeautyVideoPlugin(Star):
                     video_component = Video.fromURL(real_api_url)
                     yield event.chain_result([video_component])
                 else:
-                    yield event.plain_result("视频获取失败，请稍后重试")
+                    yield event.plain_result("获取视频失败 请稍后重试")
 
         except Exception:
-            yield event.plain_result("视频加载异常，请稍后重试")
+            yield event.plain_result("视频异常 请稍后重试")
