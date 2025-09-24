@@ -4,20 +4,16 @@ from astrbot.api.message_components import Plain, Video
 import aiohttp
 import base64
 
-@register("beauty_video", "美女视频", "获取美女视频的插件", "2.0")
+@register("beauty_video", "美女视频", "获取美女视频的插件", "1.0")
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
         self.encrypted_api = "aHR0cDovL2FwaS5vY29hLmNuL2FwaS9iZWF1dHl2aWRlby5waHA="
         self.session = aiohttp.ClientSession()
-        self.auto_recall_delay = 60  # 视频发送60秒后自动撤回
-    
     async def terminate(self):
         await self.session.close()
-    
     def _decrypt_api(self):
         return base64.b64decode(self.encrypted_api).decode()
-    
     @filter.regex(r"^[/]?(美女视频|看视频|看美女)$")
     async def get_beauty_video(self, event: AstrMessageEvent):
         try:
@@ -26,7 +22,7 @@ class BeautyVideoPlugin(Star):
             async with self.session.get(real_api_url) as response:
                 if response.status == 200:
                     video_component = Video.fromURL(real_api_url)
-                    yield event.chain_result([video_component], auto_recall_delay=self.auto_recall_delay)
+                    yield event.chain_result([video_component], auto_recall_delay=60)
                 else:
                     yield event.plain_result("获取视频失败 请稍后重试")
 
