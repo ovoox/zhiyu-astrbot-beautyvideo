@@ -22,7 +22,7 @@ class BeautyVideoPlugin(Star):
             async with self.session.get(real_api_url) as response:
                 if response.status == 200:
                     video_component = Video.fromURL(real_api_url)
-                    yield event.chain_result([video_component], auto_recall_delay=60)
+                    yield event.chain_result([video_component])
                 else:
                     yield event.plain_result("获取视频失败 请稍后重试")
 
