@@ -8,7 +8,7 @@ import base64
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-        self.encrypted_api = "aHR0cHM6Ly92Mi54eGFwaS5jbi9hcGkvbWVpbnY/cmV0dXJuPTMwMg=="
+        self.encrypted_api = "aHR0cHM6Ly9hcGkuczAxcy5jbi9BUEkvbXZzcC8="
         self.session = aiohttp.ClientSession()
     async def terminate(self):
         await self.session.close()
