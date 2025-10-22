@@ -14,7 +14,7 @@ class BeautyVideoPlugin(Star):
         await self.session.close()
     def _decrypt_api(self):
         return base64.b64decode(self.encrypted_api).decode()
-    @filter.regex(r"^[/]?(美女视频|看视频|看美女)$")
+    @filter.regex(r"^[/]?(美女视频|看美女)$")
     async def get_beauty_video(self, event: AstrMessageEvent):
         try:
             real_api_url = self._decrypt_api()
