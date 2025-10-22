@@ -22,5 +22,5 @@ https://github.com/ovoox/zhiyu-astrbot-beautyvideo
 ## 使用方法：
 
 * 美女视频
-* 看视频
+* 看美女
 
