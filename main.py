@@ -4,7 +4,7 @@ from astrbot.api.message_components import Plain, Video
 import aiohttp
 import base64
 
-@register("beauty_video", "美女视频", "获取美女视频的插件", "1.0")
+@register("zhiyu-astrbot-beautyvideo", "美女视频", "一款随机美女视频的AstrBot插件", "1.0")
 class BeautyVideoPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
